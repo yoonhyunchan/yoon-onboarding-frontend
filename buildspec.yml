@@ -1,0 +1,60 @@
+version: 0.2
+
+phases:
+  # ----------------------------------------
+  # 1. 설치 (Install)
+  # ----------------------------------------
+  install:
+    runtime-versions:
+      # Node.js 프로젝트의 버전에 맞게 수정하세요 (예: 18)
+      nodejs: 22
+    commands:
+      # 프로젝트 의존성 설치
+      - echo Installing dependencies...
+      - npm install
+
+  # ----------------------------------------
+  # 2. 사전 빌드 (Pre-build)
+  # ----------------------------------------
+  pre_build:
+    commands:
+      # .env.example 파일을 .env로 복사하여 환경 변수 설정
+      - echo Setting up environment variables...
+      - cp .env.example .env
+
+  # ----------------------------------------
+  # 3. 빌드 (Build)
+  # ----------------------------------------
+  build:
+    commands:
+      # 프로덕션 빌드 명령어 실행 (예상 결과물: dist 폴더)
+      - echo Starting build...
+      - npm run build
+
+  # ----------------------------------------
+  # 4. 빌드 후 처리 (Post-build)
+  # ----------------------------------------
+  post_build:
+    commands:
+      # S3에 dist 폴더 내용 동기화 및 업로드
+      - echo Deploying to S3...
+      - aws s3 sync dist/ s3://dev-onboarding-frontend-s3/  # 해당 S3에 대한 권한 및 S3 bucket policy 필요
+      - aws cloudfront create-invalidation --distribution-id E1V2M65TANGDZV --paths "/*"  # CloudFront invalication 권한 필요
+
+      # --delete 옵션: S3에는 있지만 로컬(dist)에는 없는 파일을 S3에서 삭제하여 동기화합니다.
+
+# ----------------------------------------
+# 아티팩트 (Artifacts)
+# ----------------------------------------
+# S3에 직접 배포하기 때문에 CodeBuild 아티팩트를 별도로 저장하지 않습니다.
+# CodePipeline에서 다운스트림으로 전달할 내용이 있다면 이 섹션을 수정해야 합니다.
+# artifacts:
+#   files:
+#     - ""
+  # discard-paths: yes # 이 설정을 통해 CodeBuild 기본 아티팩트를 무시하고 바로 배포할 수 있습니다.
+
+
+# CloudFrontFullAccess
+cache:
+  paths:
+    - '/root/.npm/**/*'
