@@ -39,7 +39,7 @@ phases:
       # S3에 dist 폴더 내용 동기화 및 업로드
       - echo Deploying to S3...
       - aws s3 sync dist/ s3://dev-onboarding-frontend-s3/  # 해당 S3에 대한 권한 및 S3 bucket policy 필요
-      - aws cloudfront create-invalidation --distribution-id E1V2M65TANGDZV --paths "/*"  # CloudFront invalication 권한 필요
+      # - aws cloudfront create-invalidation --distribution-id E1V2M65TANGDZV --paths "/*"  # CloudFront invalication 권한 필요
 
       # --delete 옵션: S3에는 있지만 로컬(dist)에는 없는 파일을 S3에서 삭제하여 동기화합니다.
 
