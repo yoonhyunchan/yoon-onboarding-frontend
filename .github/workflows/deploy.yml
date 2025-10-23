@@ -1,0 +1,56 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
+name: build and deploy to S3
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+env:
+  BUCKET_NAME : "yoon-onboarding-s3"
+  AWS_REGION : "ap-northeast-2"
+permissions:
+        id-token: write
+        contents: read
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:
+    - name: Git Clone the repository
+      uses: actions/checkout@v5
+
+    - name: "Configure AWS Credentials"
+      uses: aws-actions/configure-aws-credentials@v5.1.0
+      
+      with:
+        role-to-assume: arn:aws:iam::286387522454:role/AWSGithubRoleYoonFrontend
+        role-session-name: samplerolesession
+        aws-region: ${{env.AWS_REGION}}
+        # AWS Access Key ID. Provide this key if you want to assume a role using access keys rather than a web identity token.
+        # aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+        # AWS Secret Access Key. Required if aws-access-key-id is provided.
+        # aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        
+      
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - run: cp .env.example .env
+    - run: npm install
+    - run: npm run build
+
+    - run: aws s3 sync dist/ s3://${{env.BUCKET_NAME}}/
+    - run: aws cloudfront create-invalidation --distribution-id E297UAIR9Y96SE --paths "/*"
