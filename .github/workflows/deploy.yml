@@ -8,9 +8,7 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-env:
-  BUCKET_NAME : "yoon-onboarding-s3"
-  AWS_REGION : "ap-northeast-2"
+
 permissions:
         id-token: write
         contents: read
@@ -33,7 +31,7 @@ jobs:
       uses: aws-actions/configure-aws-credentials@v5.1.0
       
       with:
-        role-to-assume: arn:aws:iam::286387522454:role/AWSGithubRoleYoonFrontend
+        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
         role-session-name: samplerolesession
         aws-region: ${{env.AWS_REGION}}
         # AWS Access Key ID. Provide this key if you want to assume a role using access keys rather than a web identity token.
@@ -53,4 +51,4 @@ jobs:
     - run: npm run build
 
     - run: aws s3 sync dist/ s3://${{env.BUCKET_NAME}}/
-    - run: aws cloudfront create-invalidation --distribution-id E297UAIR9Y96SE --paths "/*"
+    - run: aws cloudfront create-invalidation --distribution-id ${{ secrets.DISTRIBUTION_ID }} --paths "/*"
